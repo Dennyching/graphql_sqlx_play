@@ -1,7 +1,7 @@
 use crate::todo::*;
 use async_graphql::{Context, FieldResult, SimpleBroker, ID};
 use futures::Stream;
-use sqlx::sqlite::SqlitePool;
+use sqlx::{PgPool, Row};
 use tokio::stream::StreamExt;
 
 #[async_graphql::Object]
@@ -24,7 +24,7 @@ pub struct QueryRoot;
 #[async_graphql::Object]
 impl QueryRoot {
     async fn todos(&self, ctx: &Context<'_>) -> FieldResult<Vec<Todo>> {
-        let pool = ctx.data::<SqlitePool>();
+        let pool = ctx.data::<PgPool>();
         let items = Todo::list(&pool).await?;
         Ok(items)
     }
@@ -35,7 +35,7 @@ pub struct MutationRoot;
 #[async_graphql::Object]
 impl MutationRoot {
     async fn create_todo(&self, ctx: &Context<'_>, body: String) -> FieldResult<Todo> {
-        let pool = ctx.data::<SqlitePool>();
+        let pool = ctx.data::<PgPool>();
         let item = Todo::insert(&pool, &body).await?;
 
         SimpleBroker::publish(TodoChanged {
@@ -48,7 +48,7 @@ impl MutationRoot {
     }
 
     async fn delete_todo(&self, ctx: &Context<'_>, id: ID) -> FieldResult<bool> {
-        let pool = ctx.data::<SqlitePool>();
+        let pool = ctx.data::<PgPool>();
         let id = id.parse::<String>()?;
 
         Todo::delete(&pool, &id).await?;
@@ -69,7 +69,7 @@ impl MutationRoot {
         body: String,
         complete: bool,
     ) -> FieldResult<Option<Todo>> {
-        let pool = ctx.data::<SqlitePool>();
+        let pool = ctx.data::<PgPool>();
         let id = id.parse::<String>()?;
 
         let item = Todo::update(&pool, &id, &body, complete).await?;
@@ -84,7 +84,7 @@ impl MutationRoot {
     }
 
     async fn toggle_complete(&self, ctx: &Context<'_>, id: ID) -> FieldResult<Option<Todo>> {
-        let pool = ctx.data::<SqlitePool>();
+        let pool = ctx.data::<PgPool>();
         let id = id.parse::<String>()?;
 
         let item = Todo::toggle_complete(&pool, &id).await?;

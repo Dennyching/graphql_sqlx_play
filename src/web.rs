@@ -2,11 +2,11 @@ use crate::graphql::{MutationRoot, QueryRoot, SubscriptionRoot};
 use async_graphql::http::{playground_source, GQLResponse};
 use async_graphql::{QueryBuilder, Schema};
 use async_graphql_warp::graphql_subscription;
-use sqlx::sqlite::SqlitePool;
+use sqlx::{PgPool, Row};
 use std::convert::Infallible;
 use warp::{http::Response, Filter, Reply};
 
-pub async fn start(pool: SqlitePool) {
+pub async fn start(pool: PgPool) {
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
         .data(pool)
         .finish();

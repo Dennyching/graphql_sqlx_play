@@ -1,7 +1,8 @@
-use crate::result::Result;
-use sqlx::sqlite::SqlitePool;
-use uuid::Uuid;
 
+
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
+use std::option::Option;
 #[derive(Debug, Clone)]
 pub struct Todo {
     pub id: String,
@@ -10,7 +11,7 @@ pub struct Todo {
 }
 
 impl Todo {
-    pub async fn insert(pool: &SqlitePool, body: &str) -> Result<Todo> {
+    pub async fn insert(pool: &PgPool, body: &str) -> anyhow::Result<Todo> {
         let id = Uuid::new_v4().to_string();
         sqlx::query!("INSERT INTO todo VALUES ($1, $2, $3)", id, body, false)
             .execute(pool)
@@ -23,7 +24,7 @@ impl Todo {
         })
     }
 
-    pub async fn list(pool: &SqlitePool) -> Result<Vec<Todo>> {
+    pub async fn list(pool: &PgPool) -> anyhow::Result<Vec<Todo>> {
         let todos = sqlx::query_as!(Todo, "SELECT * FROM todo")
             .fetch_all(pool)
             .await?;
@@ -32,11 +33,11 @@ impl Todo {
     }
 
     pub async fn update(
-        pool: &SqlitePool,
+        pool: &PgPool,
         id: &str,
         body: &str,
         complete: bool,
-    ) -> Result<Option<Todo>> {
+    ) -> anyhow::Result<Option<Todo>> {
         sqlx::query!(
             "UPDATE todo SET body=$1, complete=$2 WHERE id=$3",
             body,
@@ -53,7 +54,7 @@ impl Todo {
         Ok(todo)
     }
 
-    pub async fn toggle_complete(pool: &SqlitePool, id: &str) -> Result<Option<Todo>> {
+    pub async fn toggle_complete(pool: &PgPool, id: &str) -> anyhow::Result<Option<Todo>>{
         sqlx::query!("UPDATE todo SET complete=NOT complete WHERE id=$1", id)
             .execute(pool)
             .await?;
@@ -65,7 +66,7 @@ impl Todo {
         Ok(todo)
     }
 
-    pub async fn delete(pool: &SqlitePool, id: &str) -> Result<()> {
+    pub async fn delete(pool: &PgPool, id: &str) ->anyhow::Result<()>{
         sqlx::query!("DELETE FROM todo WHERE id=$1", id)
             .execute(pool)
             .await?;
